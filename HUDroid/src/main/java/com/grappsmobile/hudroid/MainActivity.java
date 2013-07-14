@@ -11,6 +11,8 @@ import android.os.Bundle;
 import android.app.Activity;
 import android.provider.Settings;
 import android.view.Menu;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,20 +53,39 @@ public class MainActivity extends Activity implements LocationListener {
 //            alert.show();
         }
 
-        Criteria criteria = new Criteria();
-        provider = locationManager.getBestProvider(criteria, false);
-        Location location = locationManager.getLastKnownLocation(provider);
+        final LocationListener thisLL = this;
 
-        // Initialize the location fields
-        if (location != null) {
-            System.out.println("Provider " + provider + " has been selected.");
-            onLocationChanged(location);
-        } else {
-            TextView tvSpeed = (TextView)findViewById(R.id.tvSpeed);
-            tvSpeed.setText((int) location.getSpeed());
-        }
+        Button btnStart = (Button) findViewById(R.id.btnStart);
+        btnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(getApplicationContext(), "Attempting to bind Location Listener", Toast.LENGTH_LONG).show();
 
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, this);
+                Criteria criteria = new Criteria();
+                provider = locationManager.getBestProvider(criteria, false);
+                Location location = locationManager.getLastKnownLocation(provider);
+
+                // Initialize the location fields
+                if (location != null) {
+                    System.out.println("Provider " + provider + " has been selected.");
+                    onLocationChanged(location);
+                } else {
+                    TextView tvSpeed = (TextView)findViewById(R.id.tvSpeed);
+                    tvSpeed.setText((int) location.getSpeed());
+                }
+
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, thisLL);
+            }
+        });
+
+        Button btnStop = (Button) findViewById(R.id.btnStop);
+        btnStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(getApplicationContext(), "Attempting to stop Location Listener", Toast.LENGTH_LONG).show();
+                locationManager.removeUpdates(thisLL);
+            }
+        });
     }
 
     /* Request updates at startup */
