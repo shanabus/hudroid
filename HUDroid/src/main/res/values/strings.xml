@@ -8,6 +8,7 @@
     <string name="gps_settings_cancel">Cancel</string>
     <string name="gps_settings_title">Location Settings</string>
     <string name="title_activity_hud">HUDActivity</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="max_speed_label">max speed</string>
+    <string name="distance_travelled_label">distance travelled</string>
 
 </resources>

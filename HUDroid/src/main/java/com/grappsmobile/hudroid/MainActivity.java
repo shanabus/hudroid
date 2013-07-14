@@ -12,6 +12,7 @@ import android.app.Activity;
 import android.provider.Settings;
 import android.view.Menu;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +26,8 @@ public class MainActivity extends Activity implements LocationListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         boolean enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
@@ -54,12 +57,19 @@ public class MainActivity extends Activity implements LocationListener {
         }
 
         final LocationListener thisLL = this;
+        final TextView tvSpeed = (TextView)findViewById(R.id.tvSpeed);
+        final TextView tvMaxSpeed = (TextView)findViewById(R.id.tvMaxSpeed);
+        final TextView tvDistanceTravelled = (TextView)findViewById(R.id.tvDistanceTravelled);
 
         Button btnStart = (Button) findViewById(R.id.btnStart);
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Attempting to bind Location Listener", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "Attempting to bind Location Listener", Toast.LENGTH_SHORT).show();
+
+                tvSpeed.setText("0.0");
+                tvMaxSpeed.setText("--");
+                tvDistanceTravelled.setText("--");
 
                 Criteria criteria = new Criteria();
                 provider = locationManager.getBestProvider(criteria, false);
@@ -111,35 +121,59 @@ public class MainActivity extends Activity implements LocationListener {
 
     float maxSpeed = 0;
     int timesUpdated = 0;
+    Location lastLoc;
+    float speed;
+    float ttf;
+    double totalDistance;
 
     @Override
     public void onLocationChanged(Location location) {
         TextView tvSpeed = (TextView)findViewById(R.id.tvSpeed);
-        TextView tvLog = (TextView)findViewById(R.id.tvLog);
-        TextView tvLogMax = (TextView)findViewById(R.id.tvLogMax);
-        TextView tvTimesUpdated = (TextView)findViewById(R.id.tvTimesUpdated);
-
-        float speed;
+        TextView tvMaxSpeed = (TextView)findViewById(R.id.tvMaxSpeed);
+        TextView tvDistanceTravelled = (TextView)findViewById(R.id.tvDistanceTravelled);
 
         timesUpdated = new Integer(timesUpdated + 1);
 
+        // attempts to update speed/max speed views
         try{
             speed = location.getSpeed();
             float mph = (float) (speed * 2.23694);
             int m = (int) mph;
             tvSpeed.setText(Integer.toString(m));
 
-            tvLog.setText(Float.toString(speed));
-            tvTimesUpdated.setText(Integer.toString(timesUpdated));
-
             if (speed > maxSpeed){
                 maxSpeed = speed;
-                tvLogMax.setText(Float.toString(maxSpeed));
+                tvMaxSpeed.setText(Integer.toString(m));
             }
         }
         catch (Exception e) {
             Toast.makeText(getApplicationContext(), "Could not get speed", Toast.LENGTH_SHORT).show();
         }
+
+        // attempts to update distance travelled
+        // http://stackoverflow.com/questions/8132198/how-to-calculate-distance-travelled
+        if(lastLoc != null)
+        {
+            ttf = (location.getTime() - lastLoc.getTime()) / 1000;
+            int R = 6371;
+            double lat1 = Math.PI / 180.0 *lastLoc.getLatitude();
+            double lon1 = Math.PI / 180.0 *lastLoc.getLongitude();
+            double lat2 = Math.PI / 180.0 *location.getLatitude();
+            double lon2 = Math.PI / 180.0 *location.getLongitude();
+            //  double dLon = Math.PI / 180.0 * (location.getLongitude() - lastLoc.getLongitude());
+            double dLat = (lat2-lat1);
+            double dLon = (lon2-lon1);
+            double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1) * Math.cos(lat2) *
+                            Math.sin(dLon/2) * Math.sin(dLon/2);
+            double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            double d = R * c;
+            totalDistance = d;
+
+            tvDistanceTravelled.setText(Double.toString(totalDistance));
+        }
+
+        lastLoc = location;
 
     }
 
