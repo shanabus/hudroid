@@ -5,5 +5,7 @@
     <color name="orange">#FF9912</color>
     <color name="black">#000000</color>
     <color name="red">#ff0000</color>
+    <color name="lime_green">#ff10ff22</color>
+    <color name="sky_blue">#ff7ba8ff</color>
 
 </resources>

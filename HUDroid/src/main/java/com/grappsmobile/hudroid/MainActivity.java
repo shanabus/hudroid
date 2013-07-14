@@ -1,15 +1,22 @@
 package com.grappsmobile.hudroid;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaPlayer;
+import android.nfc.NdefMessage;
+import android.nfc.NfcAdapter;
+import android.os.Build;
 import android.os.Bundle;
-import android.app.Activity;
-import android.provider.Settings;
+import android.os.Parcelable;
+import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.WindowManager;
@@ -17,10 +24,27 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements LocationListener {
+import org.ndeftools.Message;
+import org.ndeftools.Record;
+import org.ndeftools.externaltype.AndroidApplicationRecord;
+import org.ndeftools.wellknown.TextRecord;
+
+import java.util.List;
+import java.util.Locale;
+
+import static android.nfc.NfcAdapter.getDefaultAdapter;
+
+public class MainActivity extends Activity implements LocationListener, TextToSpeech.OnInitListener {
 
     private LocationManager locationManager;
     private String provider;
+    private static final String TAG = "HUDroid";// NfcActivity.class.getSimpleName();
+
+    protected NfcAdapter nfcAdapter;
+    protected PendingIntent nfcPendingIntent;
+
+    MediaPlayer soundPlayer;
+    private TextToSpeech tts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +120,157 @@ public class MainActivity extends Activity implements LocationListener {
                 locationManager.removeUpdates(thisLL);
             }
         });
+        // initialize NFC
+        nfcAdapter = getDefaultAdapter(this);
+        nfcPendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, this.getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+
+        // Register Android Beam callback
+        //nfcAdapter.setNdefPushMessageCallback(this, this);
+        // Register callback to listen for message-sent success
+        //nfcAdapter.setOnNdefPushCompleteCallback(this, this);
+
+        tts = new TextToSpeech(this, this);
+    }
+
+    @TargetApi(Build.VERSION_CODES.GINGERBREAD_MR1)
+    public void enableForegroundMode() {
+        Log.d(TAG, "enableForegroundMode");
+
+        IntentFilter tagDetected = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED); // filter for all
+        IntentFilter[] writeTagFilters = new IntentFilter[] {tagDetected};
+        nfcAdapter.enableForegroundDispatch(this, nfcPendingIntent, writeTagFilters, null);
+    }
+
+    public void disableForegroundMode() {
+        Log.d(TAG, "disableForegroundMode");
+
+        nfcAdapter.disableForegroundDispatch(this);
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        Log.d(TAG, "onNewIntent");
+
+        if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction())) {
+            TextView textView = (TextView) findViewById(R.id.tvNfcMessage);
+
+            textView.setText("Hello NFC!");
+
+            Parcelable[] messages = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            if (messages != null) {
+
+                Log.d(TAG, "Found " + messages.length + " NDEF messages"); // is almost always just one
+
+                //vibrate(); // signal found messages :-)
+                // parse to records
+                for (int i = 0; i < messages.length; i++) {
+                    try {
+                        List<Record> records = new Message((NdefMessage)messages[i]);
+
+                        Log.d(TAG, "Found " + records.size() + " records in message " + i);
+
+                        for(int k = 0; k < records.size(); k++) {
+                            Log.d(TAG, " Record #" + k + " is of class " + records.get(k).getClass().getSimpleName());
+
+                            if (records.get(k).getClass().getSimpleName().equals("UriRecord"))
+                            {
+                                textView.append(" - a Url");
+                            }
+
+                            Record record = records.get(k);
+
+                            if (record instanceof TextRecord){
+                                TextRecord textRecord = (TextRecord)record;
+                                TextView tvSpeed = (TextView)findViewById(R.id.tvSpeed);
+
+                                String text = textRecord.getText();
+                                String[] parts = text.split(",");
+
+                                String vehicle = parts[0]; // who's vehicle?
+                                String welcomeMessage = parts[1]; // string to speak
+                                String layoutOptions = parts[2]; // 0,1,2 for layout set
+
+                                Log.d(TAG, "Text Record is " + text);
+
+                                textView.setText(vehicle);
+                                //playSoundAndSetText(R.raw.kitten);
+                                if (layoutOptions.equals("1"))
+                                {
+                                    tvSpeed.setTextAppearance(getApplicationContext(), R.style.HUD_1);
+                                }
+                                else if (layoutOptions.equals("2"))
+                                {
+                                    tvSpeed.setTextAppearance(getApplicationContext(), R.style.HUD_2);
+                                }
+                                tts.speak(welcomeMessage, TextToSpeech.QUEUE_ADD, null);
+                                //Toast.makeText(getApplicationContext(), layoutOptions.toString(), Toast.LENGTH_LONG).show();
+                            }
+
+                            if(record instanceof AndroidApplicationRecord) {
+                                AndroidApplicationRecord aar = (AndroidApplicationRecord)record;
+                                Log.d(TAG, "Package is " + aar.getPackageName());
+                            }
+
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Problem parsing message", e);
+                    }
+
+                }
+            }
+        } else {
+            // ignore
+        }
+    }
+
+    protected void playSoundAndSetText(Integer soundResourceId) //int position, String[] itemNames, Integer[] soundIds) {
+    {
+        try
+        {
+            if (soundPlayer != null)
+            {
+                soundPlayer.stop();
+                soundPlayer.release();
+            }
+
+            soundPlayer = MediaPlayer.create(getApplicationContext(), soundResourceId);
+
+            soundPlayer.start();
+        }
+        catch(Exception e)
+        {
+            Log.d(TAG, e.getLocalizedMessage());
+        }
+
+//        mHandler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                TextView actionLabel = (TextView)findViewById(R.id.actionLabel);
+//                actionLabel.setText("");
+//                actionLabel.setVisibility(View.GONE);
+//            }
+//        }, 5000);
+    }
+
+    @Override
+    public void onInit(int status) {
+
+        if (status == TextToSpeech.SUCCESS) {
+
+            int result = tts.setLanguage(Locale.US);
+
+            if (result == TextToSpeech.LANG_MISSING_DATA
+                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "This Language is not supported");
+            } else {
+                //btnSpeak.setEnabled(true);
+                //speakOut();
+            }
+
+        } else {
+            Log.e("TTS", "Initilization Failed!");
+        }
+
     }
 
     /* Request updates at startup */
@@ -103,6 +278,7 @@ public class MainActivity extends Activity implements LocationListener {
     protected void onResume() {
         super.onResume();
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, this);
+        enableForegroundMode();
     }
 
     /* Remove the locationlistener updates when Activity is paused */
@@ -110,6 +286,17 @@ public class MainActivity extends Activity implements LocationListener {
     protected void onPause() {
         super.onPause();
         locationManager.removeUpdates(this);
+        disableForegroundMode();
+    }
+
+    @Override
+    public void onDestroy() {
+        // Don't forget to shutdown tts!
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
     }
 
     @Override
