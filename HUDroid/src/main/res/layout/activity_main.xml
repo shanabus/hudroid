@@ -69,21 +69,39 @@
     </RelativeLayout>
 
     <RelativeLayout
+            android:id="@+id/InnerRelativeLayout3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="40dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            >
+        <TextView
+                android:id="@+id/tvNfcMessage"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:textSize="25dp"
+                android:textColor="#ff3c3cff"
+                />
+    </RelativeLayout>
+
+    <RelativeLayout
             android:id="@+id/InnerRelativeLayout2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/InnerRelativeLayout1"
+            android:layout_above="@id/InnerRelativeLayout3"
             >
 
         <TextView
                 android:id="@+id/tvDistanceTravelled"
-                android:layout_width="60dp"
+                android:layout_width="80dp"
                 android:layout_height="wrap_content"
                 android:text="--"
-                android:textSize="30dp"
+                android:textSize="24dp"
                 android:textColor="#ffffff"/>
         <TextView
-                android:layout_width="100dp"
+                android:layout_width="170dp"
                 android:layout_height="wrap_content"
                 android:gravity="left"
                 android:layout_toRightOf="@id/tvDistanceTravelled"
@@ -93,20 +111,29 @@
                 />
     </RelativeLayout>
 
-    <RelativeLayout
-            android:id="@+id/InnerRelativeLayout3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true"
-            >
-        <TextView
-                android:id="@+id/tvNfcMessage"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:textSize="25dp"
-            android:textColor="#ff3c3cff"
-            />
-    </RelativeLayout>
+    <!--<RelativeLayout-->
+            <!--android:id="@+id/InnerRelativeLayout4"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_above="@id/InnerRelativeLayout2"-->
+            <!-->-->
+
+        <!--<TextView-->
+                <!--android:id="@+id/tvDistanceTravelled2"-->
+                <!--android:layout_width="80dp"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:text=""-->
+                <!--android:textSize="24dp"-->
+                <!--android:textColor="#fff32f"/>-->
+        <!--<TextView-->
+                <!--android:layout_width="170dp"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:gravity="left"-->
+                <!--android:layout_toRightOf="@id/tvDistanceTravelled2"-->
+                <!--android:layout_marginTop="10dp"-->
+                <!--android:text="distance raw"-->
+                <!--android:textColor="#eee"-->
+                <!--/>-->
+    <!--</RelativeLayout>-->
+
 </RelativeLayout>

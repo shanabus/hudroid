@@ -29,6 +29,8 @@ import org.ndeftools.Record;
 import org.ndeftools.externaltype.AndroidApplicationRecord;
 import org.ndeftools.wellknown.TextRecord;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Locale;
 
@@ -92,8 +94,8 @@ public class MainActivity extends Activity implements LocationListener, TextToSp
                 Toast.makeText(getApplicationContext(), "Attempting to bind Location Listener", Toast.LENGTH_SHORT).show();
 
                 tvSpeed.setText("0.0");
-                tvMaxSpeed.setText("--");
-                tvDistanceTravelled.setText("--");
+                //tvMaxSpeed.setText("--");
+                //tvDistanceTravelled.setText("--");
 
                 Criteria criteria = new Criteria();
                 provider = locationManager.getBestProvider(criteria, false);
@@ -313,11 +315,13 @@ public class MainActivity extends Activity implements LocationListener, TextToSp
     float ttf;
     double totalDistance;
 
+    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     @Override
     public void onLocationChanged(Location location) {
         TextView tvSpeed = (TextView)findViewById(R.id.tvSpeed);
         TextView tvMaxSpeed = (TextView)findViewById(R.id.tvMaxSpeed);
         TextView tvDistanceTravelled = (TextView)findViewById(R.id.tvDistanceTravelled);
+        //TextView tvDistanceTravelled2 = (TextView)findViewById(R.id.tvDistanceTravelled2);
 
         timesUpdated = new Integer(timesUpdated + 1);
 
@@ -342,7 +346,7 @@ public class MainActivity extends Activity implements LocationListener, TextToSp
         if(lastLoc != null)
         {
             ttf = (location.getTime() - lastLoc.getTime()) / 1000;
-            int R = 6371;
+            int R = 6213;//6371;
             double lat1 = Math.PI / 180.0 *lastLoc.getLatitude();
             double lon1 = Math.PI / 180.0 *lastLoc.getLongitude();
             double lat2 = Math.PI / 180.0 *location.getLatitude();
@@ -355,9 +359,14 @@ public class MainActivity extends Activity implements LocationListener, TextToSp
                             Math.sin(dLon/2) * Math.sin(dLon/2);
             double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             double d = R * c;
-            totalDistance = d;
+            totalDistance += d;
 
-            tvDistanceTravelled.setText(Double.toString(totalDistance));
+            DecimalFormat df = new DecimalFormat("0.0");
+            df.setRoundingMode(RoundingMode.HALF_UP);
+            //System.out.println(df.format(d)); //0.01
+
+            tvDistanceTravelled.setText(df.format(totalDistance));
+            //tvDistanceTravelled2.setText(Double.toString(totalDistance));
         }
 
         lastLoc = location;
