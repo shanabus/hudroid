@@ -314,14 +314,15 @@ public class MainActivity extends Activity implements LocationListener, TextToSp
     float speed;
     float ttf;
     double totalDistance;
+    //double totalDistanceT;
 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     @Override
     public void onLocationChanged(Location location) {
         TextView tvSpeed = (TextView)findViewById(R.id.tvSpeed);
         TextView tvMaxSpeed = (TextView)findViewById(R.id.tvMaxSpeed);
+        //TextView tvDistanceTravelled = (TextView)findViewById(R.id.tvDistanceTravelled);
         TextView tvDistanceTravelled = (TextView)findViewById(R.id.tvDistanceTravelled);
-        //TextView tvDistanceTravelled2 = (TextView)findViewById(R.id.tvDistanceTravelled2);
 
         timesUpdated = new Integer(timesUpdated + 1);
 
@@ -345,28 +346,32 @@ public class MainActivity extends Activity implements LocationListener, TextToSp
         // http://stackoverflow.com/questions/8132198/how-to-calculate-distance-travelled
         if(lastLoc != null)
         {
-            ttf = (location.getTime() - lastLoc.getTime()) / 1000;
-            int R = 6213;//6371;
-            double lat1 = Math.PI / 180.0 *lastLoc.getLatitude();
-            double lon1 = Math.PI / 180.0 *lastLoc.getLongitude();
-            double lat2 = Math.PI / 180.0 *location.getLatitude();
-            double lon2 = Math.PI / 180.0 *location.getLongitude();
-            //  double dLon = Math.PI / 180.0 * (location.getLongitude() - lastLoc.getLongitude());
-            double dLat = (lat2-lat1);
-            double dLon = (lon2-lon1);
-            double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(lat1) * Math.cos(lat2) *
-                            Math.sin(dLon/2) * Math.sin(dLon/2);
-            double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            double d = R * c;
-            totalDistance += d;
+//            ttf = (location.getTime() - lastLoc.getTime()) / 1000;
+//            int R = 6213;//6371;
+//            double lat1 = Math.PI / 180.0 *lastLoc.getLatitude();
+//            double lon1 = Math.PI / 180.0 *lastLoc.getLongitude();
+//            double lat2 = Math.PI / 180.0 *location.getLatitude();
+//            double lon2 = Math.PI / 180.0 *location.getLongitude();
+//            //  double dLon = Math.PI / 180.0 * (location.getLongitude() - lastLoc.getLongitude());
+//            double dLat = (lat2-lat1);
+//            double dLon = (lon2-lon1);
+//            double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+//                    Math.cos(lat1) * Math.cos(lat2) *
+//                            Math.sin(dLon/2) * Math.sin(dLon/2);
+//            double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+//            double d = R * c;
+//            totalDistance += d;
 
             DecimalFormat df = new DecimalFormat("0.0");
             df.setRoundingMode(RoundingMode.HALF_UP);
             //System.out.println(df.format(d)); //0.01
 
+            //tvDistanceTravelled.setText(df.format(totalDistance));
+
+            double meters = location.distanceTo(lastLoc);
+            double miles = (meters*0.000621371192237334); // should be miles from last loc to new loc
+            totalDistance = totalDistance + miles;
             tvDistanceTravelled.setText(df.format(totalDistance));
-            //tvDistanceTravelled2.setText(Double.toString(totalDistance));
         }
 
         lastLoc = location;
